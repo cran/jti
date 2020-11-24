@@ -22,7 +22,7 @@ new_charge <- function(x, cliques, parents) {
   potC[["C"]] <- vector("list", length(cliques))
 
   children <- names(parents)
-  
+
   for (child in children) {
     allocate_child_to_potential(potC, x, cliques, child, parents[[child]])
   }

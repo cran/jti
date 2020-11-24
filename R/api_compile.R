@@ -33,7 +33,7 @@ cpt_list <- function(x, g = NULL) UseMethod("cpt_list")
 #' @rdname cpt_list
 #' @export
 cpt_list.list <- function(x, g = NULL) { 
-    
+
   if (!is_named_list(x)) {
     stop(
       "x must be a named list of cpts. ",

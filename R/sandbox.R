@@ -50,7 +50,6 @@
 # pigs.rds
 # water.rds
 
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                         MUNIN: 1041-1397-80592
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -58,28 +57,12 @@
 ## library(gRbase)
 ## library(pryr)
 
-## size_mb <- function(x) {
-##   format(object.size(x), units = "Mb", standard = "auto", digits = 1L)
-## }
-
-## l    <- readRDS("../../../../sandbox/r/bns/asia.rds")
+## l    <- readRDS("../../../sandbox/r/bns/munin.rds")
 ## cpts <- bnfit_to_cpts(l)
 ## cl   <- cpt_list(cpts)
-
-## g <- attr(cl, "graph")
-## gm <- igraph::as.undirected(g)
-## plot(gm, vertex.size = 5, vertex.label = NA)
-## agm <- igraph::as_adjacency_matrix(gm)
-## t <- triangulate_adjacency_matrix(agm, attr(cl, "dim_names"), "min_sp")
-## jti::rip(as_adj_lst(t))
-
-## gg <- igraph::graph_from_adjacency_matrix(t, "undirected")
-## plot(gg, vertex.size = 4, vertex.label = NA)
-
 ## cp   <- compile(cl, save_graph = TRUE)
 ## j    <- jt(cp)
 ## sapply(j$charge$C, sum)
-## size_mb(cp)
 
 ## plist <- gRain::compileCPT(cpts)
 ## grn   <- gRain::grain(plist)
@@ -964,3 +947,43 @@
 
 # link:
 # 1.6 gb vs fail
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#        pednoa
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## size_mb <- function(x) {
+##   format(object.size(x), units = "Mb", standard = "auto", digits = 1L)
+## }
+
+## cl <- readRDS("/home/mads/Documents/sandbox/r/bns/pednoa.rds")
+## cp <- compile(cl, names(cl[[length(cl)]])[1])
+## j <- jt(cp)
+
+## size_mb(j$charge$C)
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#        BARLEY
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+## barley <- readRDS("../../../../sandbox/r/bns/barley.rds")
+## barley_cpts <- jti::bnfit_to_cpts(barley)
+## cl <- jti::cpt_list(barley_cpts)
+## dn <- attr(cl, "dim_names")
+## ev <- unlist(lapply(dn, function(x) x[1]))
+## set.seed(11)
+## ev <- ev[sample(seq_along(ev), 15)]
+## cp <- jti::compile(cl)
+## j  <- jti::jt(cp, ev)
+## j  <- jti::jt(cp)
+## size_mb(j)
+
+## sapply(j$charge$C, sum)
+
+## plist <- gRain::compileCPT(barley_cpts)
+## grn   <- gRain::grain(plist)
+## jt_gr <- gRbase::compile(grn)
+## prop  <- gRbase::propagate(jt_gr)
+
+## size_mb(prop$potential$pot_equi)
