@@ -1,6 +1,6 @@
 Package: jti
 Title: Junction Tree Inference
-Version: 0.5.2
+Version: 0.6.0
 Date: 2020-11-24
 Authors@R: 
     person(given = "Mads",
@@ -22,8 +22,8 @@ RoxygenNote: 7.1.1
 SystemRequirements: C++11
 Suggests: tinytest
 NeedsCompilation: yes
-Packaged: 2020-11-24 13:18:13 UTC; mads
+Packaged: 2020-12-16 14:09:00 UTC; mads
 Author: Mads Lindskou [aut, cre]
 Maintainer: Mads Lindskou <mads@math.aau.dk>
 Repository: CRAN
-Date/Publication: 2020-11-24 15:30:07 UTC
+Date/Publication: 2020-12-16 14:40:06 UTC
