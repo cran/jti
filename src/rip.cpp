@@ -13,7 +13,7 @@
 // //' @export
 // [[Rcpp::export]]
 Rcpp::List mcs(Rcpp::List & adj, std::string start_node = "", bool check = true) {
-
+  // TODO: Make an "int" version for the rooted_junction_tree
   VS  nodes = adj.names();
   int N = nodes.size();
   if (start_node == "") start_node = nodes[0];
@@ -131,23 +131,6 @@ Rcpp::List perfect_separators(VVS & x) {
   return ps;
 }
 
-// [[Rcpp::export]]
-Rcpp::List parents(VS po, Rcpp::List ps) {
-  // po: perfect ordering from mcs
-  // ps: perfect sequence from mcs
-  int npo = po.size();
-  for (int i = 0; i < npo; i++) {
-    std::string poi = po[i];
-    auto psi    = Rcpp::as<VS>(ps[i]);
-    auto psi_it = std::find(psi.begin(), psi.end(), poi);
-    if (psi_it != psi.end()) {
-      psi.erase(psi_it);
-      ps[i] = psi;
-    }
-  }
-  ps.names() = po;
-  return ps;
-}
 
 // //' Runnining Intersection Property
 // //' @description Given a decomposable graph, this functions finds a perfect numbering on the vertices using maximum cardinality search, and hereafter returns a list with two elements: "C" - A RIP-ordering of the cliques and "S" - A RIP ordering of the separators.
@@ -170,6 +153,5 @@ Rcpp::List rip(Rcpp::List & adj, std::string start_node = "", bool check = true)
   VVS pseq = z["ps"];
   VVS pc   = perfect_cliques(pseq);
   Rcpp::List ps = perfect_separators(pc);
-  Rcpp::List pa  = parents(z["po"], z["ps"]);
-  return Rcpp::List::create(Rcpp::_["C"] = pc , Rcpp::_["S"] = ps, Rcpp::_["P"] = pa);
+  return Rcpp::List::create(Rcpp::_["C"] = pc , Rcpp::_["S"] = ps);
 }

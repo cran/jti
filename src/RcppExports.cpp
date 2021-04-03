@@ -42,18 +42,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// parents
-Rcpp::List parents(VS po, Rcpp::List ps);
-RcppExport SEXP _jti_parents(SEXP poSEXP, SEXP psSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< VS >::type po(poSEXP);
-    Rcpp::traits::input_parameter< Rcpp::List >::type ps(psSEXP);
-    rcpp_result_gen = Rcpp::wrap(parents(po, ps));
-    return rcpp_result_gen;
-END_RCPP
-}
 // rip
 Rcpp::List rip(Rcpp::List& adj, std::string start_node, bool check);
 RcppExport SEXP _jti_rip(SEXP adjSEXP, SEXP start_nodeSEXP, SEXP checkSEXP) {
@@ -76,6 +64,18 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::List >::type cliques(cliquesSEXP);
     Rcpp::traits::input_parameter< int >::type root(rootSEXP);
     rcpp_result_gen = Rcpp::wrap(rooted_junction_tree(cliques, root));
+    return rcpp_result_gen;
+END_RCPP
+}
+// root_clique_tree
+arma::Mat<int> root_clique_tree(arma::Mat<int> clique_tree, int root);
+RcppExport SEXP _jti_root_clique_tree(SEXP clique_treeSEXP, SEXP rootSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::Mat<int> >::type clique_tree(clique_treeSEXP);
+    Rcpp::traits::input_parameter< int >::type root(rootSEXP);
+    rcpp_result_gen = Rcpp::wrap(root_clique_tree(clique_tree, root));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -179,9 +179,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_jti_mcs", (DL_FUNC) &_jti_mcs, 3},
     {"_jti_perfect_cliques", (DL_FUNC) &_jti_perfect_cliques, 1},
     {"_jti_perfect_separators", (DL_FUNC) &_jti_perfect_separators, 1},
-    {"_jti_parents", (DL_FUNC) &_jti_parents, 2},
     {"_jti_rip", (DL_FUNC) &_jti_rip, 3},
     {"_jti_rooted_junction_tree", (DL_FUNC) &_jti_rooted_junction_tree, 2},
+    {"_jti_root_clique_tree", (DL_FUNC) &_jti_root_clique_tree, 2},
     {"_jti_int_set_intersect", (DL_FUNC) &_jti_int_set_intersect, 2},
     {"_jti_set_intersect", (DL_FUNC) &_jti_set_intersect, 2},
     {"_jti_set_union", (DL_FUNC) &_jti_set_union, 2},

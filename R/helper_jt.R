@@ -27,55 +27,7 @@ has_root_node <- function(x) UseMethod("has_root_node")
 
 has_root_node.jt <- function(x) attr(x, "root_node") != ""
 
-## new_schedule <- function(cliques) {
-##   nc <- length(cliques)
-##   clique_graph <- matrix(0L, nc, nc)
-##   coll_tree   <- clique_graph
-##   dist_tree   <- clique_graph
-
-##   # Alg. 4.8 - Probabilistic Expert Systems (p.55)
-##   for (i in seq_along(cliques)[-1L]) {
-##     for (j in 1:(i-1L)) {
-##       Ci   <- cliques[[i]]
-##       Cj   <- cliques[[j]]
-##       Hi_1 <- unlist(cliques[1:(i-1L)])
-##       Si   <- intersect(Ci, Hi_1)
-##       if (all(Si %in% Cj)) {
-##         clique_graph[i, j] <- 1L
-##         clique_graph[j, i] <- 1L
-##         is_new_directed_edge <- !neq_empt_int(which(coll_tree[i, ] == 1L))
-##         if (is_new_directed_edge) {
-##           coll_tree[i, j] <- 1L
-##           dist_tree[j, i] <- 1L
-##         }
-##       }
-##     }
-##   }
-
-##   coll_lvs <- leaves_jt(coll_tree)
-##   dist_lvs <- leaves_jt(dist_tree)
-
-##   attr(coll_tree, "leaves")  <- coll_lvs
-##   attr(dist_tree, "leaves")  <- dist_lvs
-
-##   attr(coll_tree, "parents") <- parents_jt(coll_tree, coll_lvs)
-##   attr(dist_tree, "parents") <- parents_jt(dist_tree, dist_lvs)
-
-##   collect    <- list(cliques = cliques, tree = coll_tree)
-##   distribute <- list(cliques = cliques, tree = dist_tree)
-  
-##   return(
-##     list(
-##       collect = collect ,
-##       distribute = distribute,
-##       clique_graph = clique_graph,
-##       clique_root = "C1"
-##     )
-##   )
-  
-## }
-
-new_schedule2 <- function(cliques_chr, cliques_int, root_node) {
+new_schedule <- function(cliques_chr, cliques_int, root_node) {
   
   # mcs promise that the root_node lives in clique one
   jrn <- if (root_node != "") 1L else 0L
@@ -139,8 +91,7 @@ prune_jt <- function(jt) {
 
       # Normalize clique_root
       cr <- attr(jt, "clique_root")
-      probability_of_evidence <- sum(sparta::vals(jt$charge$C[[cr]]))
-      attr(jt, "probability_of_evidence") <- probability_of_evidence
+      attr(jt, "probability_of_evidence") <- sum(sparta::vals(jt$charge$C[[cr]]))
       jt$charge$C[[cr]] <- sparta::normalize(jt$charge$C[[cr]])
 
     } else {
@@ -162,64 +113,55 @@ prune_jt <- function(jt) {
   return(jt)
 }
 
-## Old method:
-## set_evidence_jt <- function(charge, cliques, evidence) {
-##   for (k in seq_along(charge$C)) {
-##     Ck <- names(charge$C[[k]])
-##     for (i in seq_along(evidence)) {
-##       e     <- evidence[i]
-##       e_var <- names(e)
-##       e_val <- unname(e)
-##       if (e_var %in% Ck) {
-##         m <- try(sparta::slice(charge$C[[k]], e), silent = TRUE)
-##         if (inherits(m, "try-error")) {
-##           stop(
-##             "The evidence leads to a degenerate distribution ",
-##             "since the evidence was never observed in one or ",
-##             "more of the clique potentials.",
-##             call. = FALSE
-##           )
-##         }
-##         charge$C[[k]] <- m
-##       }
-##     }
-##   }
-##   return(charge)
-## }
 
-set_evidence_jt <- function(charge, cliques, evidence) {
+# set_evidence_jt <- function(charge, cliques, evidence) {
+#   for (k in seq_along(charge$C)) {
+#     Ck <- names(charge$C[[k]])
+#     if (inherits(Ck, "sparta_unity")) next
+#     es_in_ck <- which(names(evidence) %in% Ck)
+#     for (i in es_in_ck) {
+#       e     <- evidence[i]
+#       e_var <- names(e)
+#       e_val <- unname(e)
+#       if (e_var %in% Ck) {
+#         m <- try(sparta::slice(charge$C[[k]], e), silent = TRUE)
+#         if (inherits(m, "try-error")) {
+#           stop(
+#             "inconsistent evidence",
+#             call. = FALSE
+#           )
+#         }
+#         charge$C[[k]] <- m
+#       }
+#     }
+#   }
+#   return(charge)
+# }
 
-  n_evidence   <- length(evidence)
-  n_cliques    <- length(cliques)
-  n_evidence_set <- 0L
-  
-  for (k in seq_along(charge$C)) {
-    Ck <- names(charge$C[[k]])
-    for (i in seq_along(evidence)) {
+
+set_evidence <- function(x, cliques, evidence) {
+  # x: list of (sparse) potentials
+  for (k in seq_along(x)) {
+    Ck <- names(x[[k]])
+    if (inherits(x[[k]], "sparta_unity")) next
+    es_in_ck <- which(names(evidence) %in% Ck)
+    for (i in es_in_ck) {
       e     <- evidence[i]
       e_var <- names(e)
       e_val <- unname(e)
       if (e_var %in% Ck) {
-        m <- try(sparta::slice(charge$C[[k]], e), silent = TRUE)
+        m <- try(sparta::slice(x[[k]], e), silent = TRUE)
         if (inherits(m, "try-error")) {
-          if (k == n_cliques) {
-            stop(
-              "The evidence leads to a degenerate distribution ",
-              "since some part of the evidence was never observed",
-              "in any of the the clique potentials.",
-              call. = FALSE
-            )
-          } else {
-            next
-          }
+          stop(
+            "inconsistent evidence",
+            call. = FALSE
+          )
         }
-        charge$C[[k]] <- m
-        n_evidence_set <- n_evidence_set + 1L
-        if (n_evidence_set == n_evidence) return(charge)
-        next
+        x[[k]] <- m
       }
     }
   }
+  return(x)
 }
 
 
@@ -231,11 +173,9 @@ new_jt <- function(x, evidence = NULL, flow = "sum") {
   charge  <- x$charge
   cliques <- x$cliques
 
-  if (!is.null(evidence)) charge <- set_evidence_jt(charge, cliques, evidence)
+  if (!is.null(evidence)) charge$C <- set_evidence(charge$C, cliques, evidence)
 
-  # schedule  <- new_schedule_grain(grain_obj)
-  # schedule  <- new_schedule(cliques)
-  schedule  <- new_schedule2(cliques, attr(x, "cliques_int"), attr(x, "root_node"))
+  schedule  <- new_schedule(cliques, attr(x, "cliques_int"), attr(x, "root_node"))
   attr(x, "cliques_int") <- NULL
 
   jt <- list(
@@ -250,6 +190,7 @@ new_jt <- function(x, evidence = NULL, flow = "sum") {
   attr(jt, "flow")        <- flow
   attr(jt, "root_node")   <- attr(x, "root_node")
   attr(jt, "clique_root") <- schedule$clique_root
+  attr(jt, "evidence")    <- attr(x, "evidence") # The aggregated evidence
   
   if (flow == "max") {
     # most probable explanation
@@ -262,7 +203,19 @@ new_jt <- function(x, evidence = NULL, flow = "sum") {
   return(jt)
 }
 
-send_messages <- function(jt, flow = "sum") {
+
+#' Send Messages in a Junction Tree
+#'
+#' Send messages from the current leaves to the current parents
+#' in a junction tree
+#' 
+#' @param jt A \code{jt} object return from the \code{jt} function
+#' @seealso \code{\link{jt}}, \code{\link{get_cliques}}, \code{\link{leaves}},
+#' \code{\link{parents}}
+#' @examples
+#' # See example 6 in the help page for the jt function
+#' @export
+send_messages <- function(jt) {
 
   direction <- attr(jt, "direction")
   if (direction == "full") {
@@ -291,17 +244,13 @@ send_messages <- function(jt, flow = "sum") {
       message_k_names <- setdiff(names(pot_lvs_k), C_par_k)
       
       if (direction == "collect") {
-        if (inherits(pot_lvs_k, "sparta_unity")) {
-          # TODO: Implement marginalization of unities!
-          #       Should be easy with the rank attr now.
-          pot_lvs_k <- sparta::mult(
-            sparta::sparta_ones(sparta::dim_names(pot_lvs_k)),
-            attr(pot_lvs_k, "rank")
-          )
-        }
+
+        par_is_unity <- inherits(pot_par_k, "sparta_unity")
         message_k <- sparta::marg(pot_lvs_k, message_k_names, attr(jt, "flow"))
-        jt$charge$C[[C_par_k_name]] <- sparta::mult(pot_par_k, message_k)
+
+        jt$charge$C[[C_par_k_name]] <- if (par_is_unity) message_k else sparta::mult(pot_par_k, message_k)
         jt$charge$C[[C_lvs_k_name]] <- sparta::div(pot_lvs_k, message_k)
+        
       }
 
       if (direction == "distribute") {

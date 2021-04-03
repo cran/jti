@@ -5,35 +5,25 @@
 \alias{compile.cpt_list}
 \title{Compile information}
 \usage{
-compile(
-  x,
-  root_node = "",
-  joint_vars = NULL,
-  save_graph = FALSE,
-  opt = "min_fill"
-)
+compile(x, evidence = NULL, root_node = "", joint_vars = NULL, tri = "minimal")
 
-\method{compile}{cpt_list}(
-  x,
-  root_node = "",
-  joint_vars = NULL,
-  save_graph = FALSE,
-  opt = "min_fill"
-)
+\method{compile}{cpt_list}(x, evidence = NULL, root_node = "", joint_vars = NULL, tri = "min_nei")
 }
 \arguments{
 \item{x}{An object returned from \code{cpt_list}}
 
+\item{evidence}{A named vector. The names are the variabes and the elements
+are the evidence.}
+
 \item{root_node}{A node for which we require it to live in the root
-clique (the first clique)}
+clique (the first clique).}
 
-\item{joint_vars}{A vector of variables for which we require to be in
-the same clique}
+\item{joint_vars}{A vector of variables for which we require them
+to be in the same clique. Edges between all these variables are added
+to the moralized graph.}
 
-\item{save_graph}{Logical.}
-
-\item{opt}{The optimization strategy used for triangulation. Either
-'min_fill' or 'min_sp'}
+\item{tri}{The optimization strategy used for triangulation. Either
+one of 'min_nei', 'min_fill', 'min_sp', 'sparse', 'minimal'}
 }
 \description{
 Compiled objects are used as building blocks for junction tree inference
@@ -41,19 +31,30 @@ Compiled objects are used as building blocks for junction tree inference
 \details{
 The Junction Tree Algorithm performs both a forward and inward
 message passsing (collect and distribute). However, when the forward
-phase is finish, the root clique potential is guaranteed to be the
+phase is finished, the root clique potential is guaranteed to be the
 joint pmf over the variables involved in the root clique. Thus, if
 it is known in advance that a specific variable is of interest, the
 algortihm can be terminated after the forward phase. Use the \code{root_node}
-to specify such a variable.
+to specify such a variable and specify \code{propagate = "collect"} in
+the juntion tree algortihm function \code{jt}.
 
 Moreover, if interest is in some joint pmf for variables that end up
 being in different cliques these variables must be specified in advance
 using the \code{joint_vars} argument. The compilation step then
 adds edges between all of these variables to ensure that at least one
 clique contains all of them.
+
+Evidence can be entered either at compile stage
+or after compilation. Hence, one can also combine
+evidence from before compilation with evidence
+after compilation. Before refers to entering
+evidence in the 'compile' function and after
+refers to entering evidence in the 'jt' function.
 }
 \examples{
 cptl <- cpt_list(asia2)
-compile(cptl, joint_vars = c("bronc", "tub"))
+cp1  <- compile(cptl, evidence = c(bronc = "yes"), joint_vars = c("bronc", "tub"))
+print(cp1)
+dim_names(cp1)
+plot(get_graph(cp1))
 }
