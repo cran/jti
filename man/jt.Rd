@@ -81,7 +81,14 @@ query_belief(jt1, c("B", "D", "E"), type = "joint")
 # Notice, that jt1 is equivalent to:
 # jt1 <- jt(cp, propagate = "no")
 # jt1 <- propagate(jt1, prop = "full")
+
 # That is; it is possible to postpone the actual propagation
+# In this setup, the junction tree is saved in the jt1 object,
+# and one can repeadetly enter evidence for new observations
+# using the set_evidence function on jt1 and then query
+# several probabilites without repeadetly calculating the
+# the junction tree over and over again. One just needs
+# to use the propagate function on jt1.
 
 # Example 2: sum-flow with evidence
 # ---------------------------------
@@ -121,9 +128,9 @@ mpe(jt4)
   query_belief(jt5, get_clique_root(jt5), "joint")
 }
 
-# We can only query from the root clique now (clique 1)
+# We can only query from the variables in the root clique now
 # but we have ensured that the node of interest, "X", does indeed live in
-# this clique
+# this clique. The variables are found using 'get_clique_root'
 
 # Example 6: Compiling from a list of conditional probabilities
 # -------------------------------------------------------------------------

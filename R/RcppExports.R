@@ -13,6 +13,10 @@ perfect_separators <- function(x) {
     .Call(`_jti_perfect_separators`, x)
 }
 
+parents <- function(po, ps) {
+    .Call(`_jti_parents`, po, ps)
+}
+
 rip <- function(adj, start_node = "", check = TRUE) {
     .Call(`_jti_rip`, adj, start_node, check)
 }
