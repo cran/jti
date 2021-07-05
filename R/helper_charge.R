@@ -1,3 +1,21 @@
+# allocate_child_to_potential <- function(potC, x, cliques, child, parents) {
+#   # potC: environment with clique potentials
+#   cpt <- x[[child]] # extract_or_make_cpt(x, child, parents)
+#   for (k in seq_along(cliques)) {
+#     family_in_Ck <- all(c(child, parents) %in% cliques[[k]])
+#     if (family_in_Ck) {
+#       if (is.null(potC$C[[k]])) {
+#         # unity <- sparta::sparta_unity_struct(attr(x, "dim_names")[cliques[[k]]])
+#         potC$C[[k]] <- cpt # sparta::mult(cpt, unity)
+#       } else {
+#         potC$C[[k]] <- sparta::mult(potC$C[[k]], cpt)
+#       }
+#       break # Must only live in one clique
+#     }
+#   }
+#   NULL
+# }
+
 allocate_child_to_potential <- function(potC, x, cliques, child, parents) {
   # potC: environment with clique potentials
   cpt <- x[[child]] # extract_or_make_cpt(x, child, parents)
@@ -16,6 +34,7 @@ allocate_child_to_potential <- function(potC, x, cliques, child, parents) {
   NULL
 }
 
+
 ## broadcast_clique_potentials <- function(potC, x, cliques) {
 ##   for (k in seq_along(cliques)) {
 ##     pot_k <- potC[["C"]][[k]]
@@ -29,8 +48,7 @@ allocate_child_to_potential <- function(potC, x, cliques, child, parents) {
 ##   }
 ## }
 
-new_charge <- function(x, cliques, parents) {
-  # x: cpt_list
+new_charge_cpt <- function(x, cliques, parents) {
   potC <- new.env()
   potC[["C"]] <- vector("list", length(cliques))
 
@@ -57,5 +75,14 @@ new_charge <- function(x, cliques, parents) {
   potS <- structure(vector("list", length(cliques)), names = names_potS)
   names(potC$C) <- names(cliques)
   pots <- list(C = potC$C, S = potS)
+  return(pots)
+}
+
+new_charge_pot <- function(x) {
+  attributes(x) <- NULL
+  names(x) <- paste("C", 1:length(x), sep = "")
+  names_potS <- paste("S", 1:length(x), sep = "")
+  potS <- structure(vector("list", length(x)), names = names_potS)
+  pots <- list(C = x, S = potS)
   return(pots)
 }

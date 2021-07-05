@@ -7,123 +7,30 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # l    <- readRDS("../../../../sandbox/r/bns/munin.rds")
 # cpts <- jti::bnfit_to_cpts(l)
-# cl   <- jti::cpt_list(cpts)
-
-# # mean: 1.5 sec
-# microbenchmark::microbenchmark(
-#   xx <- Reduce(sparta::mult, cl[1:20]),
-#   times = 2
-# )
-
-
-# k <- 5
-# x <- letters[1:k]
-# X <- array(
-#   1L,
-#   rep(k,k),
-#   structure(replicate(k, x, FALSE), names = LETTERS[1:k])
-# )
-
-# SX <- sparta::as_sparta(X)
-
-# # CRAN: 4.23 ms
-# # DEVTOOLS: 8.08 ms
-# # SOURCE BUILD: 4.29 ms
-# microbenchmark::microbenchmark(
-#   for (j in 1:k) sparta::marg(SX, names(SX)[1:j]),
-#   times = 1000
-# )
-
-## size_mb(cp_munin) # 5.8 Mb
 
 # tictoc::tic()
-# j <- jt(cp_munin)
+# cl <- jti::cpt_list(cpts)
+# cp_munin <- jti::compile(cl)
+# j  <- jt(cp_munin)
 # tictoc::toc() # 130 -> 58 -> 24
 
-## size_mb(j) # 151 MB
-## .map_dbl(j$charge$C, sum)
-
-# library(stringr)
-# library(igraph)
-# library(graph)
-
-# g <- get_graph(cl)
-# h <- igraph::igraph.to.graphNEL(g)
-# plot(h)
-
-
-# parents  <- get.edgelist(g)[, 1]
-# children <- get.edgelist(g)[, 2]
-# leaves   <- unique(children[which(!(children %in% parents))])
-# leaves   <- leaves[!stringr::str_detect(leaves, "DUMMY")]
-
-# # grouping leave nodes:
-# grps_chr <- .map_chr(str_split(leaves, "_"), function(s) {
-#   paste0(s[1], "_", s[2])
-# })
-# grps <- split(leaves, grps_chr)
-
-# set.seed(3)
-# evars <- unname(.map_chr(grps, function(x) x[sample(1:length(x), 1L)]))
-
-# e <- .map_chr(evars, function(x) {
-#   dd <- dim_names(cl)[[x]]
-#   sample(dd, 1L)
-# })
-
-# v <- names(e)
-
-# # TODO: Deduce evidence_nodes from evidence parameter?
-# cp1 <- compile(cl, evidence = e, tri = "evidence", evidence_nodes = v)
-# cp2 <- compile(cl, evidence = e, tri = "min_fill")
-
-# microbenchmark::microbenchmark(
-#   j1 <- jt(cp1), # 55
-#   j2 <- jt(cp2), # 55
-#   times = 1
-# )
-
-# sum(.map_lgl(get_cliques(j1), function(x) "sort" %in% x))
-# sum(.map_lgl(get_cliques(j2), function(x) "sort" %in% x))
-
-
-# tictoc::tic()
-# cp_munin <- jti::compile(cl, r, tri = "minimal")
-# tictoc::toc() # 12 sec
-
-# j <- jt(cp_munin)
+# 75
+# 68
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                         LINK: 724-1125-14211
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# library(jti)
-
 # l    <- readRDS("../../../../sandbox/r/bns/link.rds")
 # cpts <- bnfit_to_cpts(l)
 # cl   <- cpt_list(cpts)
-
 # cp   <- compile(cl, tri = "min_fill")
 
-# tictoc::tic()
-# j  <- jt(cp)
-# tictoc::toc()
-
-
-# 113 : jti 0.7.0, sparta 0.7.2
-
-
-# Try with this jti and CRAN sparta
-
-
-
-# # 324 -> 260 -> 92
-# size_mb(j) # 1,6Gb (4Gb max when running)
+# .map_lgl(cp$charge$C, function(x) inherits(x, "sparta_unity")) |> sum()
+# .map_dbl(cp$charge$C, sparta::table_size) |> max()
 
 # tictoc::tic()
-# j  <- jt(cp, e)
+# j   <- jt(cp, propagate = "full") # 92 sec.
 # tictoc::toc()
-
-# size_mb(j) # 181.1Gb (4Gb max when running)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                        DIABETES: 413-602-429409
@@ -184,37 +91,58 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                      MILDEW: 35-46-540150
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# l    <- readRDS("../../../../sandbox/r/bns/mildew.rds")
-# cpts <- bnfit_to_cpts(l)
-# cl   <- cpt_list(cpts)
 
-# ####### TODO: SHOW THIS EXAMPLE!!!!
-# prod(.map_int(sparta::dim_names(cp$charge$C$C1), length))
-# ncol(cp$charge$C$C1) * 4
-# ####### TODO: SHOW THIS EXAMPLE!!!!
+# library(dplyr)
+# l    <- readRDS(url("https://www.bnlearn.com/bnrepository/link/link.rds"))
+# cl   <- l %>%
+#   # lapply(unclass) %>%
+#   bnfit_to_cpts() %>%
+#   # lapply(function(x) x + .1) %>%
+#   cpt_list()
 
-# prod(.map_int(sparta::dim_names(cp$charge$C$C2), length))
-# ncol(cp$charge$C$C2) * 4
+# m <- mpd(cl)
+# i <- which.max(sapply(m$primes_int, length))
+# es <- colnames(m$graph)[m$primes_int[[i]]]
 
-# # TODO:
-# # 1) Somehow highlight this benchmark
-# # 2) Show the memory saving of the CR
-# # 3) Remember Sorens idea
 
-# cp <- compile(cl, tri = "min_fill")
-# gr <- gRain::grain(gg)
+# set.seed(1)
 
-# microbenchmark::microbenchmark(
-#   j <- jt(cp, propagate = "full"),
-#   g <- gRbase::compile(gr, propagate = TRUE),
-#   times = 10
-# )
 
-# # TODO: ALSO SEE THIS...
-# prod(.map_int(sparta::dim_names(j$charge$C$C2), length))
-# ncol(j$charge$C$C2) * 4
+# pmf <- structure(runif(5, .6, 1), names = sample(es, 5))
+# pmf <- structure(runif(1, .6, 1), names = sample(es, 1))
 
-# MORALE::: FÅ VARIABLE, HVER MED MEGET STORT STATESPACE!!!
+# pmf <- structure(runif(13, 1, 1), names = sample(es, 13))
+
+# t0 <- triangulate(cl, tri = "min_sfill")
+# t2 <- triangulate(cl, tri = "min_fill")
+
+# .map_int(t0$cliques, length) |> max()
+# .map_int(t2$cliques, length) |> max()
+
+
+# res <- unlist(parallel::mclapply(mc.cores = 3, X = 1:500, FUN = function(a) {
+#   print(a)
+  
+#   ev <- lapply(1:500, function(k) {
+#     sample(es, 12)
+#   })
+
+#   nemf <- sapply(ev, function(x) {
+#     jt_nbinary_ops(t0, x)
+#   }) |> sum()
+
+#   nmf <- sapply(ev, function(x) {
+#     jt_nbinary_ops(t2, x)
+#   }) |> sum()
+
+#   nemf / nmf
+  
+# }))
+
+
+# TODO: Are we doing the right cals in the benchmark?
+# make new_triang constructers that accepts a permutation
+# of the moral graph!
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -390,39 +318,46 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                      ASIA
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# l    <- readRDS("../../../../sandbox/r/bns/asia.rds")
+# l <- readRDS(url("https://www.bnlearn.com/bnrepository/asia/asia.rds"))
 # cpts <- bnfit_to_cpts(l)
 # cl   <- cpt_list(cpts)
-# triangulate(cl, tri = "min_rfill")$alpha
-# triangulate(cl)
-
-# cp    <- compile(cl, tri = "alpha", alpha = sample(names(cl), length(names(cl))))
-# jt   <- jt(cp, propagate = "no")
-# tt   <- triangulate(cl)
-# jt_nbinary_ops(tt)
-# jt_nbinary_ops(jt)
-
-# microbenchmark::microbenchmark(
-#   compile(cl, tri = "evidence", evidence_nodes = character(0), .mpd = TRUE),
-#   compile(cl, tri = "evidence", evidence_nodes = character(0)),
-#   times = 1
-# )
+# triangulate(cl, tri = "min_fill", perm = sample(1:8, 8))
 
 # plot(get_graph(cl))
 
-# # Evidence triangulation
-# obj <-  new_min_fill_triang(g)
-# elim_game(obj)
+# e <- c(
+#   either = "no",
+#   lung   = "no",
+#   tub    = "yes",
+#   xray   = "no",
+#   dysp   = "no",
+#   bronc  = "yes",
+#   smoke  = "yes",
+#   asia   = "yes"
+# )
 
-# cp1   <- compile(cl, c(lung = "yes"), tri = "evidence", evidence_nodes = "lung")
-# cp1$cliques
+# cp <- compile(cl, e)
+# j  <- jt(cp, propagate = "no")
 
-# cp2   <- compile(cl, tri = "evidence", evidence_nodes = "smoke")
-# cp2$cliques
+# # j <- send_messages(j)
+# # parents(j)
+# # leaves(j)
 
-# cp3   <- compile(cl, tri = "evidence", evidence_nodes = "bronc")
-# cp3$cliques
+# query_belief(j, c("bronc"))
 
+# mpe(j)
+# j$charge$C
+
+# h  <- jt(cp, flow = "sum", propagate = "no")
+# plot(h)
+
+# sparta::marg(j$charge$C$C3, c("either", "lung"))
+# sparta::marg(j$charge$C$C4, c("smoke", "lung"))
+
+# query_belief(j, c("bronc"), "joint")
+
+# has_inconsistencies(cp)
+# query_evidence(j)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                      EARTHQUAKE: 5-4-10
@@ -499,64 +434,50 @@
 # B <- root_clique_tree(A, 1)
 # B
 
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#            TEST PERMUTATION AND RANDOM TIES
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# library(igraph)
+# library(dplyr)
 
-
-# make_all_evidence_data_and_pmf2 <- function(dat, mrf, nsims, mar = TRUE) {
-#   # mrf = named vector
-#   nr       <- nrow(dat)
-#   dat_miss <- dat
-#   for (en in names(mrf)) {
-#     col <- dat_miss[, en]
-#     na_idx <- sample(c(FALSE, TRUE), nr, TRUE, c(1-mrf[en], mrf[en]))
-#     col[na_idx] <- NA
-#     dat_miss[, en] <- col
-#   }
-#   dat_miss
-# }
-
-        
-# # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# easypackages::libraries(
-#   "tidyverse", # dplyr, ggplot2, readr, stringr, purrr, tidyr
-#   "fs",
-#   "glue",
-#   "igraph"
-# ) 
-
-# nsims   <- 1500
-
+# # make net
 # net <- c(
-#   1,10,
-#   2,10,
-#   10,3,
-#   10,9,
-#   4,3,
-#   4,5,
-#   5,6,
-#   9,8,
-#   6,7,
-#   8,7
+#   "a", "b",
+#   "a", "k",
+#   "a", "j",
+#   "b", "c",
+#   "c", "d",
+#   "d", "e",
+#   "e", "f",
+#   "g", "f",
+#   "h", "g",
+#   "i", "h",
+#   "i", "d",
+#   "i", "g",
+#   "j", "i",
+#   "k", "j"
 # ) %>%
 #   as.character() %>%
 #   graph(directed = TRUE)
 
-# # BN
-# plot(net)
+# m <- moralize_igraph(net, parents_igraph(net))
 
-# moral_graph <- jti:::moralize_igraph(net, jti:::parents_igraph(net))
-# plot(moral_graph)
+# # # visualize
+# par(mfrow = c(1, 1))
+# plot(net); plot(m)
 
-# nodes_net <- igraph::V(net)$name
-# lvls_net  <- structure(sample(3:9, length(nodes_net), TRUE), names = nodes_net)
-# dat       <- jti::sim_data_from_bn(net, lvls_net, nsims)
+# # # make dummy data
+# d <- replicate(
+#   igraph::vcount(net),
+#   as.character(sample(1:2, 1000, replace = TRUE))
+# ) |> as.data.frame()
+# colnames(d) <- V(net)$name
+# head(d)
 
-# # EVIDENCE PMF:
-# evars <- c("8", "5")# sample(nodes_net, 4)
-# mrf_ <- structure(runif(length(evars), 0.2, .6), names = evars)
 
-# nodes_mrf   <- names(mrf_)
-# dat_miss    <- make_all_evidence_data_and_pmf2(dat, mrf = mrf_, nsims)
-# cl          <- cpt_list(dat_miss, net)
-# t_evidence  <- triangulate(cl, tri = "evidence2", pmf_evidence = mrf_)
+# # # inspection of elimination game
+# cl   <- cpt_list(d, net)
+# perm <- sample(1:ncol(d), ncol(d))
+# perm
+
+# triangulate(cl, tri = "min_fill", perm = perm)
