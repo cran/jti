@@ -1,3 +1,42 @@
+# path <- "/home/mads/Documents/phd/publications/unity_propagation/src/message"
+# easypackages::libraries(
+#   "tidyverse", # dplyr, ggplot2, readr, stringr, purrr, tidyr
+#   "fs",
+#   "glue"  
+# ) 
+
+# source(glue::glue("{path}/utils.R"))
+
+# RNGkind("L'Ecuyer-CMRG")
+# set.seed(300718)
+# nc    <- 1L
+# kfold <- 10L
+
+# x      <- "chess"
+# dat_   <- readRDS(glue::glue("{path}/../data/prc/{x}.rds"))
+# dat    <- dat_[[1]]
+# cls    <- dat_[[2]]
+# g      <- readRDS(glue::glue("{path}/graphs/graph_chess.rds"))
+
+# ne_max <- ncol(dat)-1L
+# nobs   <- nrow(dat)
+# perm_obs <- sample(1:nobs, nobs)
+
+# cat("\n")
+
+# for (ne in 29:ne_max) {
+#   cv <- cv_jt(
+#     data       = dat,
+#     graph      = g,
+#     class_var  = cls,
+#     dat_name   = x,
+#     perm       = perm_obs,
+#     nevidence  = ne,
+#     kfold      = kfold,
+#     ncores     = nc
+#   )
+# }
+  
 # size_mb <- function(x) {
 #   format(object.size(x), units = "Mb", standard = "auto", digits = 1L)
 # }
@@ -7,15 +46,17 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # l    <- readRDS("../../../../sandbox/r/bns/munin.rds")
 # cpts <- jti::bnfit_to_cpts(l)
+# cl   <- jti::cpt_list(cpts)
+# cp   <- compile(cl)
+# .map_lgl(cp$charge$C, function(x) inherits(x, "sparta_unity")) |> sum()
 
-# tictoc::tic()
-# cl <- jti::cpt_list(cpts)
-# cp_munin <- jti::compile(cl)
-# j  <- jt(cp_munin)
-# tictoc::toc() # 130 -> 58 -> 24
+# microbenchmark::microbenchmark(
+#   jt(cp, propagate = "collect"),
+#   times = 1
+# )
 
-# 75
-# 68
+# 35s (UP) vs 37s (OLD)
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                         LINK: 724-1125-14211
@@ -23,14 +64,27 @@
 # l    <- readRDS("../../../../sandbox/r/bns/link.rds")
 # cpts <- bnfit_to_cpts(l)
 # cl   <- cpt_list(cpts)
-# cp   <- compile(cl, tri = "min_fill")
+# cp   <- compile(cl)
+
+# microbenchmark::microbenchmark(
+#   jt(cp, propagate = "collect"),
+#   times = 1
+# )
+
+# set.seed(70)
+# ev <- sapply(dim_names(cl), function(x) x[sample(1:length(x), 1)])[sample(1:700, 50)]
+
+
 
 # .map_lgl(cp$charge$C, function(x) inherits(x, "sparta_unity")) |> sum()
-# .map_dbl(cp$charge$C, sparta::table_size) |> max()
 
-# tictoc::tic()
-# j   <- jt(cp, propagate = "full") # 92 sec.
-# tictoc::toc()
+# microbenchmark::microbenchmark(
+#   jt(cp, propagate = "collect"),
+#   jt(cp, propagate = "collect", unity_msg = FALSE),
+#   times = 1
+# )
+
+# 42s (UP) vs 70s (OLD)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                        DIABETES: 413-602-429409
@@ -38,188 +92,100 @@
 # l    <- readRDS("../../../../sandbox/r/bns/diabetes.rds")
 # cpts <- bnfit_to_cpts(l)
 # cl   <- cpt_list(cpts)
-
-# dim_names(cl)
-
-# e <- c(
-#   dm_1   = "0_00_kg_m2",
-#   dm_3   = "0_00_kg_m2",
-#   dm_4   = "0_00_kg_m2",
-#   foto_1 = "0_00_kg_m2",
-#   straaling_4 = "300___349_MJ_m2"
-# )
-
-
-# set.seed(65)
-# e <- unlist(lapply(dim_names(cl)[sample(1:413, 1)], function(x) x[1]))
-# v <- names(e)
-
-# cp1 <- compile(cl, evidence = e, tri = "evidence", evidence_nodes = v)
-# cp2 <- compile(cl, evidence = e, tri = "min_fill")
-
-# j <- jt(cp2)
-
-# idx <- which(.map_lgl(j$cliques, function(x) v %in% x))
-
-# j$cliques[[idx[1]]]
-# names(j$charge$C[[idx[1]]])
+# cp   <- compile(cl)
+# .map_lgl(cp$charge$C, function(x) inherits(x, "sparta_unity")) |> sum()
 
 # microbenchmark::microbenchmark(
-#   jt(cp1),
-#   jt(cp2),
-#   times = 1
+#   jt(cp, propagate = "collect"),
+#   jt(cp, propagate = "collect", unity_msg = FALSE),
+#   times = 3
 # )
 
-# tt <- triangulate(cl)
+#  5.3s (UP) vs 6.16s (OLD)
 
-# tictoc::tic()
-# cp   <- jti::compile(cl)
-# tictoc::toc() # 33 s -> 2s
 
-# size_mb(cp) # 5 mb
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#                      ANDES: 223-338-1157
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# l    <- readRDS("../../../../sandbox/r/bns/andes.rds")
+# cpts <- bnfit_to_cpts(l)
+# cl   <- cpt_list(cpts)
+# cp   <- compile(cl)
+# .map_lgl(cp$charge$C, function(x) inherits(x, "sparta_unity")) |> sum()
 
-# e    <- .map_chr(attr(cl, "dim_names"), `[[`, 1L)[sample(1:400, 8)]
-# tictoc::tic()
-# j    <- jt(cp, e)
-# tictoc::toc() # 23.5 s -> 21.3
+# microbenchmark::microbenchmark(
+#   jt(cp, propagate = "collect"),
+#   times = 10
+# )
 
-## size_mb(j) # 126 mb
-
-## .map_dbl(j$charge$C, function(x) sum(x))
+# 0.82s (UP) vs 0.94s (OLD)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                      MILDEW: 35-46-540150
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# l    <- readRDS("../../../../sandbox/r/bns/link.rds")
+# cpts <- bnfit_to_cpts(l)
+# cl   <- cpt_list(cpts)
+# tt   <- triangulate(cl)
 
-# library(dplyr)
-# l    <- readRDS(url("https://www.bnlearn.com/bnrepository/link/link.rds"))
-# cl   <- l %>%
-#   # lapply(unclass) %>%
-#   bnfit_to_cpts() %>%
-#   # lapply(function(x) x + .1) %>%
-#   cpt_list()
-
-# m <- mpd(cl)
-# i <- which.max(sapply(m$primes_int, length))
-# es <- colnames(m$graph)[m$primes_int[[i]]]
-
-
-# set.seed(1)
+# p   <- "/home/mads/Documents/phd/publications/evidence_triangulation/src/tri_fail_ev_lai_1.rds"
+# tri <- readRDS(p)
+# ct  <- tri$junction_tree_collect + t(tri$junction_tree_collect)
+# g   <- igraph::graph_from_adjacency_matrix(ct, "undirected")
+# plot(g, vertex.size = 1)
+# jt_nbinary_ops(tri)
 
 
-# pmf <- structure(runif(5, .6, 1), names = sample(es, 5))
-# pmf <- structure(runif(1, .6, 1), names = sample(es, 1))
+# ev <- replicate(500, sample(names(cl), sample(1:200)))
 
-# pmf <- structure(runif(13, 1, 1), names = sample(es, 13))
+# jt_nbinary_ops(tt, ev, nc = 3) |> sum()
 
-# t0 <- triangulate(cl, tri = "min_sfill")
-# t2 <- triangulate(cl, tri = "min_fill")
+# microbenchmark::microbenchmark(
+#   jt_nbinary_ops(tt, ev, nc = 3),
+#   jt_nbinary_ops(tt, ev, nc = 1),
+#   times = 2
+# )
 
-# .map_int(t0$cliques, length) |> max()
-# .map_int(t2$cliques, length) |> max()
+# .map_lgl(cp$charge$C, function(x) inherits(x, "sparta_unity")) |> sum()
 
+# microbenchmark::microbenchmark(
+#   jt(cp, propagate = "collect"),
+#   times = 15
+# )
 
-# res <- unlist(parallel::mclapply(mc.cores = 3, X = 1:500, FUN = function(a) {
-#   print(a)
-  
-#   ev <- lapply(1:500, function(k) {
-#     sample(es, 12)
-#   })
-
-#   nemf <- sapply(ev, function(x) {
-#     jt_nbinary_ops(t0, x)
-#   }) |> sum()
-
-#   nmf <- sapply(ev, function(x) {
-#     jt_nbinary_ops(t2, x)
-#   }) |> sum()
-
-#   nemf / nmf
-  
-# }))
-
-
-# TODO: Are we doing the right cals in the benchmark?
-# make new_triang constructers that accepts a permutation
-# of the moral graph!
-
-
+# 0.280 (UP) vs 0.432 (OLD)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                      HAILFINDER: 56-66-2656
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # l    <- readRDS("../../../../sandbox/r/bns/hailfinder.rds")
 # cpts <- bnfit_to_cpts(l)
 # cl   <- cpt_list(cpts)
+# cp   <- jti::compile(cl)
 
+# microbenchmark::microbenchmark(
+#   jt(cp, propagate = "collect"),
+#   times = 15
+# )
 
-## tictoc::tic()
-## cp   <- jti::compile(cl, opt = "min_sp")
-## tictoc::toc()
-
-## size_mb(cp)
-
-## j <- jt(cp, propagate = "full")
-## .map_dbl(j$charge$C, function(x) sum(x))
-
+# 0.027 (UP) vs 0.017 (OLD)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                      BARLEY: 48-84-114005
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# library(jti)
-
 # l    <- readRDS("../../../../sandbox/r/bns/barley.rds")
 # cpts <- bnfit_to_cpts(l)
 # cl   <- cpt_list(cpts)
 # cp   <- compile(cl, tri = "min_fill")
 
-# tictoc::tic()
-# jt(cp)
-# tictoc::toc()
-
-
-# current jti, current sparta; 105.301 sec elapsed
-
-# CRAN jti and CRAN sparta; 45.067 sec elapsed
-
-# plot(get_graph(cl))
-
-# e <- c(
-#   s2528  = "x0_5",
-#   sort   = "Baracuda",
-#   ngodnt = "x_45"
-# )
-
-# v <- names(e)
-
-# # TODO: Deduce evidence_nodes from evidence parameter?
-# cp1 <- compile(cl, evidence = e, tri = "evidence", evidence_nodes = v)
-# cp2 <- compile(cl, evidence = e, tri = "min_fill")
-
-# # NOTE: Barley is hard for jti/sparta since it is "completely dense",
-# # with tables having >7e+10 elements.
+# .map_lgl(cp$charge$C, function(x) inherits(x, "sparta_unity")) |> sum()
 
 # microbenchmark::microbenchmark(
-#   j1 <- jt(cp1),
-#   j2 <- jt(cp2),
-#   times = 1
+#   jt(cp, propagate = "collect"),
+#   times = 2
 # )
 
-# sum(.map_lgl(get_cliques(j1), function(x) "sort" %in% x))
-# sum(.map_lgl(get_cliques(j2), function(x) "sort" %in% x))
-
-# jt(cp2)
-
-## tictoc::tic()
-## cp   <- jti::compile(cl)
-## tictoc::toc()
-
-## tictoc::tic()
-## j    <- jt(cp)
-## tictoc::toc()  # 118 -> 98
-
-## .map_dbl(j$charge$C, function(x) sum(x))
-
+# 20.5s (UP) vs 29.4s (OLD)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                      CHILD: 20-25-230
@@ -227,15 +193,13 @@
 # l    <- readRDS("../../../../sandbox/r/bns/child.rds")
 # cpts <- bnfit_to_cpts(l)
 # cl   <- cpt_list(cpts)
-# cp   <- jti::compile(cl, save_graph = TRUE)
-# j    <- jt(cp)
+# cp   <- jti::compile(cl)
+# triangulate(cl)
 
-# m    <- mpd(cl)
-# g    <- m$graph
-# h    <- g[m$primes_int[[5]], m$primes_int[[5]]]
-# library(dplyr)
-# igraph::graph_from_adjacency_matrix(h, "undirected") %>%
-#   plot(vertex.size = 10, vertex.label = NA)
+# .map_lgl(cp$charge$C, function(x) inherits(x, "sparta_unity")) |> sum()
+
+# none unities
+
 
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ##                      HEPAR2: 70-123-1453
@@ -243,49 +207,16 @@
 # l    <- readRDS("../../../../sandbox/r/bns/hepar2.rds")
 # cpts <- bnfit_to_cpts(l)
 # cl   <- cpt_list(cpts)
+# cp   <- jti::compile(cl)
 
-# plot(get_graph(cl), vertex.size = 1)
-
-
-# dim_names(cl)
-
-# e <- c(
-#   fatigue    = "present",
-#   gallstones = "present",
-#   PBC        = "absent",
-#   bleeding   = "present",
-#   Steatosis  = "absent",
-#   ChHepatitis = "persistent"
-#   # Cirrhosis  = "absent"
-# )
-# v <- names(e)
-
-# cp1 <- compile(cl, evidence = e, tri = "evidence", evidence_nodes = v)
-# cp2 <- compile(cl, evidence = e, tri = "min_fill")
+# .map_lgl(cp$charge$C, function(x) inherits(x, "sparta_unity")) |> sum()
 
 # microbenchmark::microbenchmark(
-#   j1 <- jt(cp1),
-#   j2 <- jt(cp2),
-#   times = 25
+#   jt(cp, propagate = "collect"),
+#   times = 15
 # )
 
-# sum(.map_lgl(get_cliques(j1), function(x) "fatigue" %in% x))
-# sum(.map_lgl(get_cliques(j2), function(x) "fatigue" %in% x))
-
-# sum(.map_lgl(get_cliques(j1), function(x) "gallstones" %in% x))
-# sum(.map_lgl(get_cliques(j2), function(x) "gallstones" %in% x))
-
-# sum(.map_lgl(get_cliques(j1), function(x) "bleeding" %in% x))
-# sum(.map_lgl(get_cliques(j2), function(x) "bleeding" %in% x))
-
-# sum(.map_lgl(get_cliques(j1), function(x) "Steatosis" %in% x))
-# sum(.map_lgl(get_cliques(j2), function(x) "Steatosis" %in% x))
-
-# sum(.map_lgl(get_cliques(j1), function(x) "ChHepatitis" %in% x))
-# sum(.map_lgl(get_cliques(j2), function(x) "ChHepatitis" %in% x))
-
-# jt(cp2)
- 
+# 30ms (UP) vs 23.5ms (OLD)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                      INSURANCE: 27-52-984
@@ -293,15 +224,7 @@
 # l    <- readRDS("../../../../sandbox/r/bns/insurance.rds")
 # cpts <- bnfit_to_cpts(l)
 # cl   <- cpt_list(cpts)
-
-# alpha <- sample(1:length(attr(cl, "dim_names")), length(attr(cl, "dim_names")))
-# cp   <- jti::compile(cl, tri = "alpha", alpha = alpha)
-
-# cp   <- jti::compile(cl, tri = "min_fill")
-# e    <- .map_chr(attr(cl, "dim_names"), `[[`, 1L)
-
-# j    <- jt(cp, e)
-# .map_dbl(j$charge$C, function(x) sum(x))
+# triangulate(cl)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -321,23 +244,33 @@
 # l <- readRDS(url("https://www.bnlearn.com/bnrepository/asia/asia.rds"))
 # cpts <- bnfit_to_cpts(l)
 # cl   <- cpt_list(cpts)
-# triangulate(cl, tri = "min_fill", perm = sample(1:8, 8))
 
 # plot(get_graph(cl))
 
-# e <- c(
-#   either = "no",
-#   lung   = "no",
-#   tub    = "yes",
-#   xray   = "no",
-#   dysp   = "no",
-#   bronc  = "yes",
-#   smoke  = "yes",
-#   asia   = "yes"
-# )
+# pe <- c(smoke = .7, either = .4)
+# pe <- c(bronc = .7, either = .4)
+
+# t1 <- triangulate(cl, tri = "min_elfill", pmf_evidence = pe)
+# t2 <- triangulate(cl, tri = "min_efill", pmf_evidence = pe)
+
+# jt_nbinary_ops(t1, list(names(pe)))
+# jt_nbinary_ops(t2, list(names(pe)))
 
 # cp <- compile(cl, e)
-# j  <- jt(cp, propagate = "no")
+# j  <- jt(cp, propagate = "full")
+# j$charge$C
+# attr(j, "probability_of_evidence")
+
+# --------------------------------------------------------------------------------
+# TODO:
+# --------------------------------------------------------------------------------
+# * TEST the new set_evidence_cpt GRUNDIGT I ALLE SCENARIER
+# * TEST other networks - some networks fitted from data
+#   + Just use ess and make a MRF to test it.
+# * Give jt() an attribute that indicates if the evidence was from cpts or pots?
+#   + or just let the user query this and let it be up to him to decide?
+# --------------------------------------------------------------------------------
+
 
 # # j <- send_messages(j)
 # # parents(j)
@@ -394,24 +327,6 @@
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#                      ANDES: 223-338-1157
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# l    <- readRDS("../../../../sandbox/r/bns/andes.rds")
-# cpts <- bnfit_to_cpts(l)
-# cl   <- cpt_list(cpts)
-
-# m    <- mpd(cl)
-# g    <- m$graph
-# h    <- g[m$primes_int[[100]], m$primes_int[[100]]]
-# library(dplyr)
-# igraph::graph_from_adjacency_matrix(h, "undirected") %>%
-#   plot(vertex.size = 1, vertex.label = NA)
-
-## cp   <- jti::compile(cl)
-## j    <- jt(cp)
-## size_mb(cp)
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                      WIN95PTS: 76-112-574
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## l    <- readRDS("../../../../sandbox/r/bns/win95pts.rds")
@@ -435,49 +350,49 @@
 # B
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#            TEST PERMUTATION AND RANDOM TIES
+#        
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# library(igraph)
-# library(dplyr)
+# library(ess)
+# g <- ess::fit_graph(derma, q = 0, sparse_qic = TRUE)
+# cl1 <- cpt_list(derma, ess::as_igraph(g))
 
-# # make net
-# net <- c(
-#   "a", "b",
-#   "a", "k",
-#   "a", "j",
-#   "b", "c",
-#   "c", "d",
-#   "d", "e",
-#   "e", "f",
-#   "g", "f",
-#   "h", "g",
-#   "i", "h",
-#   "i", "d",
-#   "i", "g",
-#   "j", "i",
-#   "k", "j"
-# ) %>%
-#   as.character() %>%
-#   graph(directed = TRUE)
-
-# m <- moralize_igraph(net, parents_igraph(net))
-
-# # # visualize
-# par(mfrow = c(1, 1))
-# plot(net); plot(m)
-
-# # # make dummy data
-# d <- replicate(
-#   igraph::vcount(net),
-#   as.character(sample(1:2, 1000, replace = TRUE))
-# ) |> as.data.frame()
-# colnames(d) <- V(net)$name
-# head(d)
+# plot(g)
 
 
-# # # inspection of elimination game
-# cl   <- cpt_list(d, net)
-# perm <- sample(1:ncol(d), ncol(d))
-# perm
 
-# triangulate(cl, tri = "min_fill", perm = perm)
+# cp1 <- compile(cl1)
+# j1  <- jt(cp1)
+# query_belief(j1, "ES")
+
+
+
+# pl  <- pot_list(derma, ess::as_igraph(g))
+# cpl <- compile(pl)
+# jl  <- jt(cpl) 
+# query_belief(j, "ES")
+
+
+# cl <- cpt_list(derma, ess::as_igraph(g))
+# cp <- compile(cl)
+# j  <- jt(cp)
+# query_belief(j, "ES")
+
+
+# microbenchmark::microbenchmark(
+#   pot_list(derma, ess::as_igraph(g)),
+#   cpt_list(derma, ess::as_igraph(g)),
+#   times = 5,
+#   unit = "ms"
+# )
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#        
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# library(ess)
+# g <- ess::fit_graph(derma, sparse_qic = TRUE)
+# cpt_list(derma, as_igraph(g))
+
+
+

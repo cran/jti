@@ -176,6 +176,10 @@ jt <- function(x, evidence = NULL, flow = "sum", propagate = "full") UseMethod("
 #' @export
 jt.charge <- function(x, evidence = NULL, flow = "sum", propagate = "full") {
 
+  if (!attr(x, "cpts_initialized")) {
+    stop("The CPTs are not yet initialized. Use either 'set_evidence' or 'initialize'.")
+  }
+  
   if (!is.null(evidence)) {
     if (!valid_evidence(attr(x, "dim_names"), evidence)) {
       stop("evidence is not on correct form", call. = FALSE)
@@ -185,6 +189,7 @@ jt.charge <- function(x, evidence = NULL, flow = "sum", propagate = "full") {
 
   j <- new_jt(x, evidence, flow)
   attr(j, "propagated") <- "no"
+  attr(j, "type") <- ifelse(inherits(x, "bn"), "bn", "mrf")
 
   # A junction tree with a single node with flow = max
   if (length(j$charge$C) == 1L && attr(j, "flow") == "max") {
@@ -367,41 +372,9 @@ query_evidence.jt <- function(x) {
   return(attr(x, "probability_of_evidence"))
 }
 
-#' Enter Evidence 
-#'
-#' Enter evidence into a the junction tree object that has not been propagated
-#'
-#' @param x A junction tree object, \code{jt}.
-#' @param evidence A named vector. The names are the variabes and the elements
-#' are the evidence.
-#' @examples
-#' # See the 'jt' function
-#' @seealso \code{\link{jt}}, \code{\link{mpe}}
-#' @export
-set_evidence <- function(x, evidence) UseMethod("set_evidence")
-
-#' @rdname set_evidence
-#' @export
-set_evidence.jt <- function(x, evidence) {
-  if (attr(x, "propagated") != "no") {
-    stop(
-      "Evidence can only be entered into a junction tree, ",
-      "that has not begun propagation.",
-      call. = FALSE
-    )
-  }
-  
-  if (!valid_evidence(attr(x, "dim_names"), evidence)) {
-    stop("Evidence is not on correct form", call. = FALSE)
-  }
-
-  inc <- new.env()
-  inc$inc <- FALSE
-  x$charge$C <- set_evidence_(x$charge$C, evidence, inc)
-  attr(x, "evidence") <- c(attr(x, "evidence"), evidence)
-  attr(x, "inconsistencies") <- inc$inc
-  return(x)
-}
+# cptl <- cpt_list(asia2)
+# cp <- compile(cptl, initialize_cpts = FALSE)
+# cp2 <- set_evidence(cp, evidence = c(bronc = "yes"))
 
 #' Query Parents or Leaves in a Junction Tree
 #'
@@ -431,6 +404,7 @@ leaves.jt <- function(jt) {
   return(true_lvs_indicies)
 }
 
+
 #' @rdname par_lvs
 #' @export
 parents <- function(jt) UseMethod("parents")
@@ -452,100 +426,6 @@ parents.jt <- function(jt) {
   return(true_par_indicies)
 }
 
-#' Query probabilities
-#'
-#' Get probabilities from a junction tree object
-#'
-#' @param x A junction tree object, \code{jt}.
-#' @param nodes The nodes for which the probability is desired
-#' @param type Either 'marginal' or 'joint'
-#' @examples
-#' # See the 'jt' function
-#' @seealso \code{\link{jt}}, \code{\link{mpe}}
-#' @export
-query_belief <- function(x, nodes, type = "marginal") UseMethod("query_belief")
-
-
-#' @rdname query_belief
-#' @export
-query_belief.jt <- function(x, nodes, type = "marginal") {
-
-  check_query(
-    attr(x, "propagate"),
-    type,
-    has_inconsistencies(x),
-    attr(x, "flow"),
-    nodes,
-    attr(x, "evidence"),
-    get_clique_root(x)
-  )
-  
-  node_lst <- if (type == "joint") {
-    list(nodes)
-  } else {
-    as.list(nodes)
-  }
-
-  .query <- lapply(node_lst, function(z) {
-
-    if (attr(x, "propagate") == "collect") {
-      root_idx    <- get_clique_root_idx(x)
-      C_idx_names <- names(x$charge$C[[root_idx]])
-
-      z_is_unity  <- length(z) == 1L && z %ni% C_idx_names
-      if (z_is_unity) {
-        dnz  <- dim_names(x)[z]
-        ldnz <- length(dnz[[1]])
-        vals <- rep(1 / ldnz, ldnz)
-        return(structure(array(vals, dimnames = dnz), is_unity = TRUE))
-      }
-      
-      marg_out <- setdiff(C_idx_names, z)
-      return(sparta::marg(x$charge$C[[root_idx]], marg_out))
-    }
-
-    in_which_cliques <- .map_lgl(x$cliques, function(clq) all(z %in% clq))
-    
-    if (!any(in_which_cliques) && type == "joint") {
-      stop("The function does not, support out-of-clique ",
-        "queries, i.e. nodes that belong to different cliques. ",
-        "Use plot(x) or get_cliques(x) to see ",
-        "the cliques of the junction tree. ",
-        "Alternatively, use the `joint_vars` ",
-        "argument in the compilation process.",
-        call. = FALSE
-      )
-    }
-
-    index_in_which_cliques <- which(in_which_cliques)
-
-    # NOTE: test this!
-    statespace_of_possible_cliques <- .map_dbl(x$charge$C[in_which_cliques], ncol)
-
-    idx <- index_in_which_cliques[which.min(statespace_of_possible_cliques)]
-    C_idx_names <- names(x$charge$C[[idx]])
-
-    z_is_unity <- length(z) == 1L && z %ni% C_idx_names
-    if (z_is_unity) {
-      dnz  <- dim_names(x)[z]
-      ldnz <- length(dnz[[1]])
-      vals <- rep(1 / ldnz, ldnz)
-      return(structure(array(vals, dimnames = dnz), is_unity = TRUE))
-    }
-
-    marg_out <- setdiff(C_idx_names, z)
-    return(sparta::marg(x$charge$C[[idx]], marg_out))
-  })
-
-  if (type == "joint") {
-    sparta::as_array(.query[[1]])
-  } else {
-    out <- lapply(.query, function(z) {
-      if (!is.null(attr(z, "is_unity"))) structure(z, is_unity = NULL) else sparta::as_array(z)
-    })
-    return(structure(out, names = nodes))
-  }
-}
 
 #' A print method for junction trees
 #'
@@ -622,5 +502,19 @@ plot.jt <- function(x, ...) {
   .names <- unlist(lapply(y$cliques, function(z) paste(z, collapse = "\n")))
   dimnames(y$tree) <- list(.names, .names)
   g <- igraph::graph_from_adjacency_matrix(y$tree, y$type)
+  graphics::plot(g, ...)
+}
+
+
+#' A plot method for junction trees
+#'
+#' @param x A compile object
+#' @param ... For S3 compatability. Not used.
+#' @seealso \code{\link{compile}}
+#' @export
+plot.charge <- function(x, ...) {
+  .names <- unlist(lapply(x$cliques, function(z) paste(z, collapse = "\n")))
+  dimnames(x$schedule$clique_graph) <- list(.names, .names)
+  g <- igraph::graph_from_adjacency_matrix(x$schedule$clique_graph, "undirected")
   graphics::plot(g, ...)
 }
