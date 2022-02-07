@@ -92,17 +92,17 @@
 # l    <- readRDS("../../../../sandbox/r/bns/diabetes.rds")
 # cpts <- bnfit_to_cpts(l)
 # cl   <- cpt_list(cpts)
-# cp   <- compile(cl)
-# .map_lgl(cp$charge$C, function(x) inherits(x, "sparta_unity")) |> sum()
 
 # microbenchmark::microbenchmark(
-#   jt(cp, propagate = "collect"),
-#   jt(cp, propagate = "collect", unity_msg = FALSE),
-#   times = 3
+#   triangulate(cl, mpd_based = TRUE),
+#   triangulate(cl, mpd_based = FALSE),
+#   times = 2
 # )
 
-#  5.3s (UP) vs 6.16s (OLD)
+# tt <- triangulate(cl, mpd_based = TRUE)
+# tf <- triangulate(cl, mpd_based = FALSE)
 
+# jt_nbinary_ops(tt) / jt_nbinary_ops(tf)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                      ANDES: 223-338-1157
@@ -244,53 +244,36 @@
 # l <- readRDS(url("https://www.bnlearn.com/bnrepository/asia/asia.rds"))
 # cpts <- bnfit_to_cpts(l)
 # cl   <- cpt_list(cpts)
-
+# pe <- c(smoke = .7, either = .4)
+# triangulate(cl, tri = "min_sp")$fill_edges
+# triangulate(cl, tri = "min_ssp")$fill_edges
+# t1 <- triangulate(cl, tri = "min_elsp", pmf_evidence = pe)
+# t2 <- triangulate(cl, tri = "min_elssp", pmf_evidence = pe, mpd_based = TRUE)
+# jt_nbinary_ops(t3, list(names(pe)))
 # plot(get_graph(cl))
 
-# pe <- c(smoke = .7, either = .4)
-# pe <- c(bronc = .7, either = .4)
 
-# t1 <- triangulate(cl, tri = "min_elfill", pmf_evidence = pe)
-# t2 <- triangulate(cl, tri = "min_efill", pmf_evidence = pe)
+# # min_fill based:
+#  "min_fill"
+#  "min_rfill"
 
-# jt_nbinary_ops(t1, list(names(pe)))
-# jt_nbinary_ops(t2, list(names(pe)))
+# # min_sp based:
+#  "min_sp"    # clique statespace   
+#  "min_ssp"   # separator statespace   
+#  "min_lsp"   # log clique statespace   
+#  "min_lssp"  # log separator statespace 
+#  "min_elsp"  # expected log clique statespace
+#  "min_elssp" # expected log separtor statespace
 
-# cp <- compile(cl, e)
-# j  <- jt(cp, propagate = "full")
-# j$charge$C
-# attr(j, "probability_of_evidence")
+# # usage:
+# l <- readRDS(url("https://www.bnlearn.com/bnrepository/asia/asia.rds"))
+# cpts <- bnfit_to_cpts(l)
+# cl   <- cpt_list(cpts)
+# pe <- c(smoke = .7, either = .4, dysp = 0.2)
+# N <- length(names(cl))
+# t <- triangulate(cl, tri = "min_elssp", pmf_evidence = pe, mpd_based = TRUE, perm = TRUE)
+# jt_nbinary_ops(t, list(names(pe)))
 
-# --------------------------------------------------------------------------------
-# TODO:
-# --------------------------------------------------------------------------------
-# * TEST the new set_evidence_cpt GRUNDIGT I ALLE SCENARIER
-# * TEST other networks - some networks fitted from data
-#   + Just use ess and make a MRF to test it.
-# * Give jt() an attribute that indicates if the evidence was from cpts or pots?
-#   + or just let the user query this and let it be up to him to decide?
-# --------------------------------------------------------------------------------
-
-
-# # j <- send_messages(j)
-# # parents(j)
-# # leaves(j)
-
-# query_belief(j, c("bronc"))
-
-# mpe(j)
-# j$charge$C
-
-# h  <- jt(cp, flow = "sum", propagate = "no")
-# plot(h)
-
-# sparta::marg(j$charge$C$C3, c("either", "lung"))
-# sparta::marg(j$charge$C$C4, c("smoke", "lung"))
-
-# query_belief(j, c("bronc"), "joint")
-
-# has_inconsistencies(cp)
-# query_evidence(j)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                      EARTHQUAKE: 5-4-10
