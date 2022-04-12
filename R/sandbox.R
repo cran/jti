@@ -173,19 +173,40 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                      BARLEY: 48-84-114005
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# l    <- readRDS("../../../../sandbox/r/bns/barley.rds")
+# l <- readRDS(url("https://www.bnlearn.com/bnrepository/diabetes/diabetes.rds"))
 # cpts <- bnfit_to_cpts(l)
 # cl   <- cpt_list(cpts)
-# cp   <- compile(cl, tri = "min_fill")
 
-# .map_lgl(cp$charge$C, function(x) inherits(x, "sparta_unity")) |> sum()
+# mp  <- mpd(cl)
+# fps <- unique(unlist(mp$primes_int[which(mp$flawed)]))
+# fps <- colnames(mp$graph)[fps]
+# nfps <- length(fps)
 
-# microbenchmark::microbenchmark(
-#   jt(cp, propagate = "collect"),
-#   times = 2
+# set.seed(9)
+
+# pe <- structure(runif(nfps), names = names(fps)) # rep(.1, nfps)
+
+# evidence <- unique(lapply(1:1000, function(x) {
+#   len <- sample(3:100, 1)
+#   sample(fps, len, prob = pe)
+# }))
+
+
+
+# tris <- list(
+#   triangulate(cl, tri = "min_fill", mpd_based = FALSE),
+#   triangulate(cl, tri = "min_sp", mpd_based = FALSE),
+#   triangulate(cl, tri = "min_ssp", mpd_based = FALSE),
+#   triangulate(cl, tri = "min_lsp", mpd_based = FALSE),
+#   triangulate(cl, tri = "min_lssp", mpd_based = FALSE),
+#   triangulate(cl, tri = "min_elsp", pmf_evidence = pe, mpd_based = FALSE),
+#   triangulate(cl, tri = "min_elssp", pmf_evidence = pe, mpd_based = FALSE)
 # )
 
-# 20.5s (UP) vs 29.4s (OLD)
+# (s <- structure(sapply(tris, function(x) jt_nbinary_ops(x, evidence) |> sum()), names = 1:7))
+# sort(s)
+# which.min(s)
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #                      CHILD: 20-25-230
@@ -244,12 +265,21 @@
 # l <- readRDS(url("https://www.bnlearn.com/bnrepository/asia/asia.rds"))
 # cpts <- bnfit_to_cpts(l)
 # cl   <- cpt_list(cpts)
+
 # pe <- c(smoke = .7, either = .4)
-# triangulate(cl, tri = "min_sp")$fill_edges
-# triangulate(cl, tri = "min_ssp")$fill_edges
-# t1 <- triangulate(cl, tri = "min_elsp", pmf_evidence = pe)
-# t2 <- triangulate(cl, tri = "min_elssp", pmf_evidence = pe, mpd_based = TRUE)
-# jt_nbinary_ops(t3, list(names(pe)))
+
+# tris <- list(
+#   triangulate(cl, tri = "min_fill", mpd_based = FALSE),
+#   triangulate(cl, tri = "min_sp", mpd_based = FALSE),
+#   triangulate(cl, tri = "min_ssp", mpd_based = FALSE),
+#   triangulate(cl, tri = "min_lsp", mpd_based = FALSE),
+#   triangulate(cl, tri = "min_lssp", mpd_based = FALSE),
+#   triangulate(cl, tri = "min_elsp", pmf_evidence = pe, mpd_based = FALSE),
+#   triangulate(cl, tri = "min_elssp", pmf_evidence = pe, mpd_based = FALSE)
+# )
+
+# sapply(tris, function(x) jt_nbinary_ops(x, list(names(pe)), root = 1))
+
 # plot(get_graph(cl))
 
 

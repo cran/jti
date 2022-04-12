@@ -1,12 +1,12 @@
 Package: jti
 Title: Junction Tree Inference
-Version: 0.8.3
-Date: 2022-02-07
+Version: 0.8.4
+Date: 2022-04-11
 Authors@R: 
     person(given = "Mads",
            family = "Lindskou",
            role = c("aut", "cre"),
-           email = "mads@math.aau.dk")
+           email = "madslindskou@gmail.com")
 Description: Minimal and memory efficient implementation of the junction tree
 	     algorithm using the Lauritzen-Spiegelhalter scheme;
 	     S. L. Lauritzen and D. J. Spiegelhalter (1988) 
@@ -20,10 +20,11 @@ Imports: Rcpp, igraph, sparta
 LinkingTo: Rcpp, RcppArmadillo
 RoxygenNote: 7.1.2
 SystemRequirements: C++11
-Suggests: tinytest
+Suggests: rmarkdown, knitr, tinytest, ess
+VignetteBuilder: knitr
 NeedsCompilation: yes
-Packaged: 2022-02-07 12:01:01 UTC; mads
+Packaged: 2022-04-11 18:03:12 UTC; mads
 Author: Mads Lindskou [aut, cre]
-Maintainer: Mads Lindskou <mads@math.aau.dk>
+Maintainer: Mads Lindskou <madslindskou@gmail.com>
 Repository: CRAN
-Date/Publication: 2022-02-07 12:20:08 UTC
+Date/Publication: 2022-04-12 07:12:38 UTC

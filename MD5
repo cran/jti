@@ -1,6 +1,6 @@
-b8485a1652267a83c2f7841c5d4581f5 *DESCRIPTION
+332a20bb5b86ba80a0bf9229c6a381a2 *DESCRIPTION
 01a53d46a4a7e2bb0158d4086a9338bc *NAMESPACE
-58d4258fc54008c9fe94316785866371 *NEWS.md
+f932448446887336f32453a649ca580c *NEWS.md
 aeceeeb53c55d735b67c0ea82cb3c401 *R/RcppExports.R
 9a92c1a449147d51b31e1559f4c2ecf4 *R/api_compile.R
 93a58e39feffaa396fcc41da2a257d5d *R/api_jt.R
@@ -19,10 +19,14 @@ a6cff250f6cc087d9bcb6641fe70d514 *R/helper_misc.R
 a670d7ee62fb377c23b3c129aede8c94 *R/helper_sim.R
 8dbe014af0d20bcea9aba9ee6a469abd *R/helper_triang.R
 547f882bb9413da524625aafbfd2659a *R/jti_package.R
-55a3c95f87df29cf35e3d1367406eb3d *R/sandbox.R
+124e2ce27bbfe27b405f3e79de0325a1 *R/sandbox.R
 6267f9d9621179ba672246cd5e5c8779 *README.md
+7a3127ee406b584cd2b4abc9e7574b94 *build/vignette.rds
 cb41d11f398ac0a7569659a5ea642a0e *data/asia.rda
 b94f30a8c1570f20bd0b27fc5c775bc9 *data/asia2.rda
+c08fb9fc4a106081b219f12cac0cdab3 *inst/doc/using_jti.R
+8bfc65b110eec50bcbafe4f42621209b *inst/doc/using_jti.Rmd
+ad358c0ef966bd052282ac591c8135b9 *inst/doc/using_jti.html
 854b4d909737fcf96eaad5253f576f30 *inst/extdata/asia2.rda
 3ca560170bf893168f0646501b295b67 *inst/extdata/derma.rds
 0352bbd0b4c1572d2fa591e15daf75f8 *inst/extdata/derma_igraph.rds
@@ -85,3 +89,4 @@ bce122963c6b903eae7c6c274758a1f5 *src/path_exists.cpp
 eb888beb0991dbbeac9f2b8af884d790 *src/rooted_junction_tree.cpp
 fbed664280d9e483d4b91c61ab1a99de *src/set_ops.cpp
 37ea13f092134ac8170ad85074f47b48 *src/set_ops.h
+8bfc65b110eec50bcbafe4f42621209b *vignettes/using_jti.Rmd
